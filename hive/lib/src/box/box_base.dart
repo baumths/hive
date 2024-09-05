@@ -1,4 +1,4 @@
-part of hive;
+part of '../../hive.dart';
 
 /// A event representing a change in a box.
 class BoxEvent {
@@ -15,7 +15,10 @@ class BoxEvent {
   BoxEvent(this.key, this.value, this.deleted);
 
   @override
-  bool operator ==(dynamic other) {
+  int get hashCode => key ^ value;
+
+  @override
+  bool operator ==(Object other) {
     if (other is BoxEvent) {
       return other.key == key && other.value == value;
     }

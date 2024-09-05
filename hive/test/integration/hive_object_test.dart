@@ -10,7 +10,10 @@ class _TestObject with HiveObjectMixin {
   _TestObject(this.name);
 
   @override
-  bool operator ==(dynamic other) => other is _TestObject && other.name == name;
+  int get hashCode => name.hashCode;
+
+  @override
+  bool operator ==(Object other) => other is _TestObject && other.name == name;
 }
 
 class _TestObjectAdapter extends TypeAdapter<_TestObject> {

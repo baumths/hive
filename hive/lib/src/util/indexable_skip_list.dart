@@ -1,3 +1,5 @@
+// ignore_for_file: null_check_on_nullable_type_parameter
+
 import 'dart:collection';
 import 'dart:math';
 
@@ -245,7 +247,7 @@ abstract class _Iterator<K, V, E> implements Iterator<E> {
 }
 
 class _KeyIterator<K, V> extends _Iterator<K, V, K> {
-  _KeyIterator(_Node<K?, V?> node) : super(node);
+  _KeyIterator(_Node<K?, V?> super.node);
 
   @override
   K get current => node!.key!;
@@ -261,7 +263,7 @@ class _KeyIterable<K, V> extends IterableBase<K> {
 }
 
 class _ValueIterator<K, V> extends _Iterator<K, V, V> {
-  _ValueIterator(_Node<K?, V?> node) : super(node);
+  _ValueIterator(_Node<K?, V?> super.node);
 
   @override
   V get current => node!.value!;

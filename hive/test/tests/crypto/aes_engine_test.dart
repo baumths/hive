@@ -1,4 +1,6 @@
 @Skip('Cannot run with sound null safety')
+library;
+
 import 'dart:typed_data';
 
 import 'package:hive/src/crypto/aes_engine.dart';
@@ -18,6 +20,7 @@ void main() {
     test('.encryptBlock()', () {
       var out = Uint8List(message.length);
 
+      // ignore: deprecated_member_use
       var pcEngine = AESFastEngine();
       var outPc = Uint8List(message.length);
 
@@ -32,6 +35,7 @@ void main() {
     test('.decryptBlock()', () {
       var out = Uint8List(message.length);
 
+      // ignore: deprecated_member_use
       var pcEngine = AESFastEngine();
       var encrypted = Uint8List(message.length);
 

@@ -12,34 +12,26 @@ import '../common.dart';
 
 import '../mocks.dart';
 
-class _FakeStorageBackend extends Fake implements StorageBackend {}
-
-class _FakeHiveImpl extends Fake implements HiveImpl {}
-
-class _FakeKeystore extends Fake implements HiveImpl {}
-
 class _BoxBaseMock<E> extends BoxBaseImpl<E> with Mock {
   _BoxBaseMock(
-    HiveImpl hive,
-    String name,
-    KeyComparator? keyComparator,
-    CompactionStrategy compactionStrategy,
-    StorageBackend backend,
-  ) : super(
-          hive,
-          name,
-          keyComparator,
-          compactionStrategy,
-          backend,
-        );
+    super.hive,
+    super.name,
+    super.keyComparator,
+    super.compactionStrategy,
+    super.backend,
+  );
+  @override
   Future<void> putAll(Map<dynamic, E> entries) =>
-      (super.noSuchMethod(Invocation.method(#putAll, [entries]), Future.value())
-          as Future<void>);
+      (super.noSuchMethod(Invocation.method(#putAll, [entries]),
+          returnValue: Future.value()) as Future<void>);
+  @override
   Future<void> deleteAll(Iterable keys) =>
-      (super.noSuchMethod(Invocation.method(#deleteAll, [keys]), Future.value())
-          as Future<void>);
+      (super.noSuchMethod(Invocation.method(#deleteAll, [keys]),
+          returnValue: Future.value()) as Future<void>);
+  @override
   bool get lazy =>
-      (super.noSuchMethod(Invocation.getter(#lazy), false) as bool);
+      (super.noSuchMethod(Invocation.getter(#lazy), returnValue: false)
+          as bool);
 }
 
 _BoxBaseMock _openBoxBaseMock({
@@ -152,7 +144,9 @@ void main() {
     group('.keyAt()', () {
       test('returns key at index', () {
         var box = _openBoxBaseMock();
-        box.keystore..insert(Frame.lazy(0))..insert(Frame.lazy('test'));
+        box.keystore
+          ..insert(Frame.lazy(0))
+          ..insert(Frame.lazy('test'));
         expect(box.keyAt(1), 'test');
       });
 
@@ -215,7 +209,7 @@ void main() {
     group('.add()', () {
       test('calls put()', () async {
         var box = _openBoxBaseMock();
-        when(box.put(0, 123)).thenAnswer((i) => Future.value(0));
+        when(box.put(0, 123)).thenAnswer((i) => Future<int>.value(0));
 
         expect(await box.add(123), 0);
         verify(box.put(0, 123));

@@ -114,12 +114,3 @@ Future<void> expectDirEqualsAssetDir(Directory dir1, String part1,
 
 void returnFutureVoid(PostExpectation<Future<void>> v) =>
     v.thenAnswer((i) => Future.value(null));
-
-final bool soundNullSafety = (() {
-  try {
-    null as Object;
-    return false;
-  } on TypeError {
-    return true;
-  }
-})();

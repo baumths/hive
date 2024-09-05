@@ -3,6 +3,7 @@ analyzer:
   exclude:
     - "**/*.g.dart"
     - "example/*"
+    - "**/*.mocks.dart"
   strong-mode:
     implicit-casts: false
   errors:

@@ -1,4 +1,5 @@
 @TestOn('browser')
+library;
 
 import 'dart:async' show Future;
 import 'dart:html';

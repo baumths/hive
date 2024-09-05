@@ -74,7 +74,10 @@ class Frame {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  int get hashCode => key ^ value ^ length ^ deleted;
+
+  @override
+  bool operator ==(Object other) {
     if (other is Frame) {
       return key == other.key &&
           value == other.value &&

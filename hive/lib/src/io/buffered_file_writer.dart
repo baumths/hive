@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:io' show RandomAccessFile;
+import 'dart:typed_data' show BytesBuilder;
 
 /// Not part of public API
 class BufferedFileWriter {
