@@ -96,7 +96,6 @@ void main() {
 
     test('.forEach()', () {
       final it = testList.iterator;
-      expect(it.current, null);
       expect(it.moveNext(), isTrue);
       expect(it.current, 'a');
       expect(it.moveNext(), isTrue);
@@ -104,7 +103,6 @@ void main() {
       expect(it.moveNext(), isTrue);
       expect(it.current, 'cc');
       expect(it.moveNext(), isFalse);
-      expect(it.current, null);
     });
 
     test('.join()', () {

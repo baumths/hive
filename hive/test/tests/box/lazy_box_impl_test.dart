@@ -73,6 +73,7 @@ void main() {
         var backend = MockStorageBackend();
         var keystore = MockKeystore();
         when(keystore.containsKey(any)).thenReturn(false);
+        when(keystore.insert(any, lazy: true)).thenReturn(null);
         returnFutureVoid(when(backend.writeFrames(any)));
         when(keystore.length).thenReturn(-1);
         when(keystore.deletedEntries).thenReturn(-1);
@@ -140,6 +141,7 @@ void main() {
         var backend = MockStorageBackend();
         var keystore = MockKeystore();
         when(keystore.containsKey(any)).thenReturn(true);
+        when(keystore.insert(any)).thenReturn(null);
         returnFutureVoid(when(backend.writeFrames(any)));
         when(keystore.length).thenReturn(-1);
         when(keystore.deletedEntries).thenReturn(-1);
