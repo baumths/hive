@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:html';
-import 'dart:indexed_db';
-import 'dart:js_util';
+import 'dart:js_interop';
 import 'dart:typed_data';
 
 import 'package:hive/hive.dart';
@@ -12,11 +10,14 @@ import 'package:hive/src/binary/frame.dart';
 import 'package:hive/src/box/keystore.dart';
 import 'package:hive/src/registry/type_registry_impl.dart';
 import 'package:meta/meta.dart';
+import 'package:web/web.dart' as web;
+
+import 'utils.dart';
 
 /// Handles all IndexedDB related tasks
 class StorageBackendJs extends StorageBackend {
   static const _bytePrefix = [0x90, 0xA9];
-  final Database _db;
+  final web.IDBDatabase _db;
   final HiveCipher? _cipher;
 
   TypeRegistry _registry;
@@ -95,51 +96,23 @@ class StorageBackendJs extends StorageBackend {
 
   /// Not part of public API
   @visibleForTesting
-  ObjectStore getStore(bool write, [String box = 'box']) {
+  web.IDBObjectStore getStore(bool write, [String box = 'box']) {
     return _db
-        .transaction(box, write ? 'readwrite' : 'readonly')
+        .transaction(box.toJS, write ? 'readwrite' : 'readonly')
         .objectStore(box);
   }
 
   /// Not part of public API
   @visibleForTesting
-  Future<List<dynamic>> getKeys({bool cursor = false}) {
-    var store = getStore(false);
-
-    if (hasProperty(store, 'getAllKeys') && !cursor) {
-      var completer = Completer<List<dynamic>>();
-      var request = getStore(false).getAllKeys(null);
-      request.onSuccess.listen((_) {
-        completer.complete(request.result as List<dynamic>?);
-      });
-      request.onError.listen((_) {
-        completer.completeError(request.error!);
-      });
-      return completer.future;
-    } else {
-      return store.openCursor(autoAdvance: true).map((e) => e.key).toList();
-    }
+  Future<List<dynamic>> getKeys() async {
+    return (await getStore(false).getAllKeys().unwrap<List<dynamic>>()) ?? [];
   }
 
   /// Not part of public API
   @visibleForTesting
-  Future<Iterable<dynamic>> getValues({bool cursor = false}) {
-    var store = getStore(false);
-
-    if (hasProperty(store, 'getAll') && !cursor) {
-      var completer = Completer<Iterable<dynamic>>();
-      var request = store.getAll(null);
-      request.onSuccess.listen((_) {
-        var values = (request.result as List).map(decodeValue);
-        completer.complete(values);
-      });
-      request.onError.listen((_) {
-        completer.completeError(request.error!);
-      });
-      return completer.future;
-    } else {
-      return store.openCursor(autoAdvance: true).map((e) => e.value).toList();
-    }
+  Future<Iterable<dynamic>> getValues() async {
+    var result = await getStore(false).getAll(null).unwrap<List>();
+    return result?.map(decodeValue) ?? [];
   }
 
   @override
@@ -165,8 +138,13 @@ class StorageBackendJs extends StorageBackend {
 
   @override
   Future<dynamic> readValue(Frame frame) async {
-    var value = await getStore(false).getObject(frame.key);
-    return decodeValue(value);
+    dynamic result;
+    try {
+      result = await getStore(false).get(frame.key).unwrap();
+    } on HiveError {
+      result = null;
+    }
+    return decodeValue(result);
   }
 
   @override
@@ -174,9 +152,9 @@ class StorageBackendJs extends StorageBackend {
     var store = getStore(true);
     for (var frame in frames) {
       if (frame.deleted) {
-        await store.delete(frame.key);
+        await store.delete(frame.key).unwrap();
       } else {
-        await store.put(encodeValue(frame), frame.key);
+        await store.put(encodeValue(frame), frame.key).unwrap();
       }
     }
   }
@@ -187,18 +165,17 @@ class StorageBackendJs extends StorageBackend {
   }
 
   @override
-  Future<void> clear() {
-    return getStore(true).clear();
+  Future<void> clear() async {
+    await getStore(true).clear().unwrap();
   }
 
   @override
-  Future<void> close() {
+  Future<void> close() async {
     _db.close();
-    return Future.value();
   }
 
   @override
-  Future<void> deleteFromDisk() {
-    return window.indexedDB!.deleteDatabase(_db.name!);
+  Future<void> deleteFromDisk() async {
+    await web.window.indexedDB.deleteDatabase(_db.name).unwrap();
   }
 }

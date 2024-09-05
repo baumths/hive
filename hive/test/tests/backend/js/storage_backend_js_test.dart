@@ -2,48 +2,50 @@
 library;
 
 import 'dart:async' show Future;
-import 'dart:html';
-import 'dart:indexed_db';
+import 'dart:js_interop';
 import 'dart:typed_data';
 
 import 'package:hive/hive.dart';
 import 'package:hive/src/backend/js/storage_backend_js.dart';
+import 'package:hive/src/backend/js/utils.dart';
 import 'package:hive/src/binary/binary_writer_impl.dart';
 import 'package:hive/src/binary/frame.dart';
 import 'package:hive/src/box/change_notifier.dart';
 import 'package:hive/src/box/keystore.dart';
 import 'package:hive/src/registry/type_registry_impl.dart';
 import 'package:test/test.dart';
+import 'package:web/web.dart' as web;
 
 import '../../frames.dart';
 
-late final Database _nullDatabase;
+late final web.IDBDatabase _nullDatabase;
 StorageBackendJs _getBackend({
-  Database? db,
+  web.IDBDatabase? db,
   HiveCipher? cipher,
   TypeRegistry registry = TypeRegistryImpl.nullImpl,
 }) {
   return StorageBackendJs(db ?? _nullDatabase, cipher, registry);
 }
 
-Future<Database> _openDb([String name = 'testBox']) async {
-  return await window.indexedDB!.open(name, version: 1, onUpgradeNeeded: (e) {
-    var db = e.target.result as Database;
-    if (!db.objectStoreNames!.contains('box')) {
-      db.createObjectStore('box');
-    }
-  });
+Future<web.IDBDatabase> _openDb([String name = 'testBox']) async {
+  return await web.window.indexedDB.open(name, 1).unwrap(
+    onUpgradeNeeded: (db) {
+      if (!db.objectStoreNames.contains('box')) {
+        db.createObjectStore('box');
+      }
+    },
+  );
 }
 
-ObjectStore _getStore(Database db) {
-  return db.transaction('box', 'readwrite').objectStore('box');
+web.IDBObjectStore _getStore(web.IDBDatabase db) {
+  return db.transaction('box'.toJS, 'readwrite').objectStore('box');
 }
 
-Future<Database> _getDbWith(Map<String, dynamic> content) async {
+Future<web.IDBDatabase> _getDbWith(Map<String, dynamic> content) async {
   var db = await _openDb();
   var store = _getStore(db);
-  await store.clear();
-  content.forEach((k, v) => store.put(v, k));
+  await store.clear().unwrap();
+  content.forEach((k, v) => store.put(v, k.toJS));
   return db;
 }
 
@@ -147,36 +149,18 @@ void main() async {
       });
     });
 
-    group('.getKeys()', () {
-      test('with cursor', () async {
-        var db = await _getDbWith({'key1': 1, 'key2': 2, 'key3': 3});
-        var backend = _getBackend(db: db);
+    test('.getKeys()', () async {
+      var db = await _getDbWith({'key1': 1, 'key2': 2, 'key3': 3});
+      var backend = _getBackend(db: db);
 
-        expect(await backend.getKeys(cursor: true), ['key1', 'key2', 'key3']);
-      });
-
-      test('without cursor', () async {
-        var db = await _getDbWith({'key1': 1, 'key2': 2, 'key3': 3});
-        var backend = _getBackend(db: db);
-
-        expect(await backend.getKeys(), ['key1', 'key2', 'key3']);
-      });
+      expect(await backend.getKeys(), ['key1', 'key2', 'key3']);
     });
 
-    group('.getValues()', () {
-      test('with cursor', () async {
-        var db = await _getDbWith({'key1': 1, 'key2': null, 'key3': 3});
-        var backend = _getBackend(db: db);
+    test('.getValues()', () async {
+      var db = await _getDbWith({'key1': 1, 'key2': null, 'key3': 3});
+      var backend = _getBackend(db: db);
 
-        expect(await backend.getValues(cursor: true), [1, null, 3]);
-      });
-
-      test('without cursor', () async {
-        var db = await _getDbWith({'key1': 1, 'key2': null, 'key3': 3});
-        var backend = _getBackend(db: db);
-
-        expect(await backend.getValues(), [1, null, 3]);
-      });
+      expect(await backend.getValues(), [1, null, 3]);
     });
 
     group('.initialize()', () {

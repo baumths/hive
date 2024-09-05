@@ -1,20 +1,19 @@
 @TestOn('browser')
 library;
 
-import 'dart:html';
-import 'dart:indexed_db';
-
 import 'package:hive/src/backend/js/backend_manager.dart';
+import 'package:hive/src/backend/js/utils.dart';
 import 'package:test/test.dart';
+import 'package:web/web.dart' as web;
 
-Future<Database> _openDb() async {
-  return await window.indexedDB!.open('testBox', version: 1,
-      onUpgradeNeeded: (e) {
-    var db = e.target.result as Database;
-    if (!db.objectStoreNames!.contains('box')) {
-      db.createObjectStore('box');
-    }
-  });
+Future<web.IDBDatabase> _openDb() async {
+  return await web.window.indexedDB.open('testBox', 1).unwrap(
+    onUpgradeNeeded: (db) {
+      if (!db.objectStoreNames.contains('box')) {
+        db.createObjectStore('box');
+      }
+    },
+  );
 }
 
 void main() {

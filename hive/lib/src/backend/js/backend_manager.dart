@@ -1,29 +1,33 @@
-import 'dart:html';
-import 'dart:indexed_db';
+import 'dart:js_interop';
 
 import 'package:hive/hive.dart';
 import 'package:hive/src/backend/js/storage_backend_js.dart';
+import 'package:hive/src/backend/js/utils.dart';
 import 'package:hive/src/backend/storage_backend.dart';
+import 'package:web/web.dart' as web;
 
 /// Opens IndexedDB databases
 class BackendManager implements BackendManagerInterface {
   @override
   Future<StorageBackend> open(
-      String name, String? path, bool crashRecovery, HiveCipher? cipher) async {
-    var db =
-        await window.indexedDB!.open(name, version: 1, onUpgradeNeeded: (e) {
-      var db = e.target.result as Database;
-      if (!db.objectStoreNames!.contains('box')) {
-        db.createObjectStore('box');
-      }
-    });
-
+    String name,
+    String? path,
+    bool crashRecovery,
+    HiveCipher? cipher,
+  ) async {
+    final db = await web.window.indexedDB.open(name, 1).unwrap(
+      onUpgradeNeeded: (web.IDBDatabase db) {
+        if (!db.objectStoreNames.contains('box')) {
+          db.createObjectStore('box');
+        }
+      },
+    );
     return StorageBackendJs(db, cipher);
   }
 
   @override
   Future<void> deleteBox(String name, String? path) {
-    return window.indexedDB!.deleteDatabase(name);
+    return web.window.indexedDB.deleteDatabase(name).unwrap();
   }
 
   @override
@@ -31,10 +35,11 @@ class BackendManager implements BackendManagerInterface {
     // https://stackoverflow.com/a/17473952
     try {
       var exists = true;
-      await window.indexedDB!.open(name, version: 1, onUpgradeNeeded: (e) {
-        e.target.transaction!.abort();
+      var request = web.window.indexedDB.open(name, 1);
+      request.onupgradeneeded = (web.Event _) {
+        request.transaction?.abort();
         exists = false;
-      });
+      }.toJS;
       return exists;
     } catch (error) {
       return false;
