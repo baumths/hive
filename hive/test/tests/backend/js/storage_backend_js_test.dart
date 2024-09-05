@@ -41,11 +41,11 @@ web.IDBObjectStore _getStore(web.IDBDatabase db) {
   return db.transaction('box'.toJS, 'readwrite').objectStore('box');
 }
 
-Future<web.IDBDatabase> _getDbWith(Map<String, dynamic> content) async {
+Future<web.IDBDatabase> _getDbWith(Map<String, Object?> content) async {
   var db = await _openDb();
   var store = _getStore(db);
   await store.clear().unwrap();
-  content.forEach((k, v) => store.put(v, k.toJS));
+  content.forEach((k, v) => store.put(v.jsify(), k.toJS));
   return db;
 }
 

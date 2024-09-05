@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:js_interop';
 
 import 'package:hive/hive.dart';
@@ -34,13 +35,26 @@ class BackendManager implements BackendManagerInterface {
   Future<bool> boxExists(String name, String? path) async {
     // https://stackoverflow.com/a/17473952
     try {
-      var exists = true;
+      var completer = Completer<bool>();
       var request = web.window.indexedDB.open(name, 1);
-      request.onupgradeneeded = (web.Event _) {
-        request.transaction?.abort();
-        exists = false;
-      }.toJS;
-      return exists;
+      request
+        ..onupgradeneeded = (web.Event _) {
+          request.transaction?.abort();
+          completer.complete(false);
+        }.toJS
+        ..onsuccess = (web.Event _) {
+          request.transaction?.abort();
+          completer.complete(true);
+        }.toJS
+        ..onblocked = (web.Event _) {
+          request.transaction?.abort();
+          completer.complete(true);
+        }.toJS
+        ..onerror = (web.Event _) {
+          request.transaction?.abort();
+          completer.complete(true);
+        }.toJS;
+      return await completer.future;
     } catch (error) {
       return false;
     }

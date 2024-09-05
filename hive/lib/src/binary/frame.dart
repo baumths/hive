@@ -4,10 +4,10 @@ import 'package:hive/src/util/extensions.dart';
 /// Not part of public API
 class Frame {
   /// Not part of public API
-  final dynamic key;
+  final Object? key;
 
   /// Not part of public API
-  final dynamic value;
+  final Object? value;
 
   /// Not part of public API
   final bool deleted;
@@ -74,7 +74,7 @@ class Frame {
   }
 
   @override
-  int get hashCode => key ^ value ^ length ^ deleted;
+  int get hashCode => Object.hash(key, value, length, deleted);
 
   @override
   bool operator ==(Object other) {

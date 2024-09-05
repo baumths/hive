@@ -40,7 +40,7 @@ class StorageBackendJs extends StorageBackend {
 
   /// Not part of public API
   @visibleForTesting
-  dynamic encodeValue(Frame frame) {
+  Object? encodeValue(Frame frame) {
     var value = frame.value;
     if (_cipher == null) {
       if (value == null) {
@@ -75,7 +75,7 @@ class StorageBackendJs extends StorageBackend {
 
   /// Not part of public API
   @visibleForTesting
-  dynamic decodeValue(dynamic value) {
+  Object? decodeValue(Object? value) {
     if (value is ByteBuffer) {
       var bytes = Uint8List.view(value);
       if (_isEncoded(bytes)) {
@@ -104,15 +104,16 @@ class StorageBackendJs extends StorageBackend {
 
   /// Not part of public API
   @visibleForTesting
-  Future<List<dynamic>> getKeys() async {
-    return (await getStore(false).getAllKeys().unwrap<List<dynamic>>()) ?? [];
+  Future<List<Object?>> getKeys() async {
+    final result = await getStore(false).getAllKeys().unwrap<JSArray?>();
+    return result?.toDart.map((e) => e.dartify()).toList() ?? [];
   }
 
   /// Not part of public API
   @visibleForTesting
-  Future<Iterable<dynamic>> getValues() async {
-    var result = await getStore(false).getAll(null).unwrap<List>();
-    return result?.map(decodeValue) ?? [];
+  Future<Iterable<Object?>> getValues() async {
+    final result = await getStore(false).getAll().unwrap<JSArray?>();
+    return result?.toDart.map((e) => decodeValue(e.dartify())) ?? [];
   }
 
   @override
@@ -137,10 +138,11 @@ class StorageBackendJs extends StorageBackend {
   }
 
   @override
-  Future<dynamic> readValue(Frame frame) async {
-    dynamic result;
+  Future<Object?> readValue(Frame frame) async {
+    Object? result;
     try {
-      result = await getStore(false).get(frame.key).unwrap();
+      final request = getStore(false).get(frame.key.jsify());
+      result = (await request.unwrap<JSObject?>()).dartify();
     } on HiveError {
       result = null;
     }
@@ -152,9 +154,9 @@ class StorageBackendJs extends StorageBackend {
     var store = getStore(true);
     for (var frame in frames) {
       if (frame.deleted) {
-        await store.delete(frame.key).unwrap();
+        await store.delete(frame.key.jsify()).unwrap();
       } else {
-        await store.put(encodeValue(frame), frame.key).unwrap();
+        await store.put(encodeValue(frame).jsify(), frame.key.jsify()).unwrap();
       }
     }
   }
